@@ -1,0 +1,20 @@
+{
+  "lastChangelogVersion": "0.84.1",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
+  "defaultThinkingLevel": "medium",
+  "transport": "websocket-cached",
+  "theme": "dark",
+  "tuiMode": "regular",
+  "showCacheMissNotices": true,
+  "markdown": {
+    "mermaid": "streaming"
+  },
+  "hideThinkingBlock": false,
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "compaction": {
+    "enabled": false
+  }
+}
