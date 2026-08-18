@@ -20,6 +20,8 @@
  */
 
 import { spawn } from "node:child_process";
+import { homedir } from "node:os";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
 	type BashOperations,
@@ -31,6 +33,21 @@ import {
 	type ReadOperations,
 	type WriteOperations,
 } from "@earendil-works/pi-coding-agent";
+
+const LOCAL_RESOURCE_ROOTS = [resolve(homedir(), ".pi"), resolve(homedir(), ".agents")];
+
+function isLocalResourcePath(filePath: string): boolean {
+	if (!isAbsolute(filePath)) return false;
+
+	const resolvedPath = resolve(filePath);
+	return LOCAL_RESOURCE_ROOTS.some((root) => {
+		const relativePath = relative(root, resolvedPath);
+		return (
+			relativePath === "" ||
+			(relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
+		);
+	});
+}
 
 function sshExec(remote: string, command: string): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
@@ -138,7 +155,7 @@ export default function (pi: ExtensionAPI) {
 		...localRead,
 		async execute(id, params, signal, onUpdate, _ctx) {
 			const ssh = getSsh();
-			if (!ssh || params.path.startsWith("~/.pi") || params.path.startsWith("~/.agents")) {
+			if (!ssh || isLocalResourcePath(params.path)) {
 				return localRead.execute(id, params, signal, onUpdate);
 			}
 
