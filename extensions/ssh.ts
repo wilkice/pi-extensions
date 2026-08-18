@@ -241,7 +241,7 @@ export default function (pi: ExtensionAPI) {
         const ssh = getSsh();
         if (ssh) {
             const modified = event.systemPrompt.replace(
-                `Current working directory: ${localCwd}`,
+                /^Current working directory:.*$/m,
                 `Current working directory: ${ssh.remoteCwd} (via SSH: ${ssh.remote})`,
             );
             return { systemPrompt: modified };
