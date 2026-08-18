@@ -138,7 +138,7 @@ export default function (pi: ExtensionAPI) {
 		...localRead,
 		async execute(id, params, signal, onUpdate, _ctx) {
 			const ssh = getSsh();
-			if (!ssh || params.path.startsWith("~/.pi")) {
+			if (!ssh || params.path.startsWith("~/.pi") || params.path.startsWith("~/.agents")) {
 				return localRead.execute(id, params, signal, onUpdate);
 			}
 
