@@ -14,3 +14,6 @@ Adds the `web_search` server tool to requests sent through the `openai-codex` pr
 ### Reference
 
 See the [OpenAI web search documentation](https://developers.openai.com/api/docs/guides/tools-web-search?api-mode=responses#).
+
+### example
+![](search-example.png)
