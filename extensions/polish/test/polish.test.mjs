@@ -39,6 +39,7 @@ async function harness(t, options = {}) {
     let component;
     let customCount = 0;
     const model = { id: "selected-model", provider: "test" };
+    const polishModel = { id: "deepseek-flash", provider: "deepseek" };
     const ctx = {
         mode: "tui",
         model,
@@ -58,6 +59,9 @@ async function harness(t, options = {}) {
             }),
         },
         modelRegistry: {
+            find: (provider, id) => options.modelAvailable === false
+                ? undefined
+                : provider === "deepseek" && id === "deepseek-flash" ? polishModel : undefined,
             complete: async (...args) => {
                 calls.push(args);
                 return options.complete ? options.complete(...args) : {
@@ -94,17 +98,18 @@ test("starts off, toggles and persists globally", async t => {
     assert.equal(h.status, "polish: off");
 });
 
-test("polishes only draft with selected model, reviews, then sends edited draft once", async t => {
+test("polishes only draft with DeepSeek Flash and thinking disabled, then sends edited draft once", async t => {
     const h = await harness(t, { saved: '{"enabled":true}' });
     assert.equal((await h.input()).action, "handled");
     assert.equal(h.editor, "Please fix the bug.", JSON.stringify(h.notices));
     assert.match(h.status, /review/);
     const [model, context, options] = h.calls[0];
-    assert.equal(model, h.ctx.model);
+    assert.deepEqual(model, { id: "deepseek-flash", provider: "deepseek" });
     assert.equal(context.messages.length, 1);
     assert.equal(context.messages[0].content[0].text, "pls fix bug");
     assert.equal(context.tools, undefined);
     assert.ok(options.signal instanceof AbortSignal);
+    assert.deepEqual(options.samplingParams, { thinking: { type: "disabled" } });
     assert.equal((await h.input("Please fix the bug in foo.ts.")).action, "continue");
     assert.equal(h.calls.length, 1);
     assert.equal((await h.input("next draft")).action, "handled");
@@ -193,12 +198,11 @@ test("shutdown cancels without restoring into the replacement session", async t 
     assert.equal(h.calls[0][2].signal.aborted, true);
 });
 
-test("missing model restores draft; invalid preferences fall back to off", async t => {
-    const h = await harness(t, { saved: "broken json" });
+test("missing polish model restores draft; invalid preferences fall back to off", async t => {
+    const h = await harness(t, { saved: "broken json", modelAvailable: false });
     assert.equal(h.status, "polish: off");
     assert.equal(h.notices[0][1], "warning");
     await h.toggle();
-    h.ctx.model = undefined;
     assert.equal((await h.input()).action, "handled");
     assert.equal(h.editor, "pls fix bug");
     assert.equal(h.calls.length, 0);

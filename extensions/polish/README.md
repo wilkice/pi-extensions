@@ -19,7 +19,7 @@ to send without polishing. There is no undo command.
 
 ## Scope
 
-- Uses the model currently selected when polishing begins, with its configured authentication.
+- Uses Pi's built-in `deepseek/deepseek-flash` model with thinking disabled and its configured authentication.
 - Sends only the draft and polishing instructions—not conversation history or tools.
 - Asks for conservative grammar/clarity improvements while preserving language,
   meaning, ambiguity, code, paths, and references. Review the result: these are
