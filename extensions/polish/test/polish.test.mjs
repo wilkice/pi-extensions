@@ -106,7 +106,7 @@ test("polishes only draft with DeepSeek Flash and thinking disabled, then sends 
     const [model, context, options] = h.calls[0];
     assert.deepEqual(model, { id: "deepseek-flash", provider: "deepseek" });
     assert.equal(context.messages.length, 1);
-    assert.equal(context.messages[0].content[0].text, "pls fix bug");
+    assert.ok(context.messages[0].content[0].text.includes(JSON.stringify("pls fix bug")));
     assert.equal(context.tools, undefined);
     assert.ok(options.signal instanceof AbortSignal);
     assert.deepEqual(options.samplingParams, { thinking: { type: "disabled" } });
@@ -114,6 +114,19 @@ test("polishes only draft with DeepSeek Flash and thinking disabled, then sends 
     assert.equal(h.calls.length, 1);
     assert.equal((await h.input("next draft")).action, "handled");
     assert.equal(h.calls.length, 2);
+});
+
+test("frames imperative drafts as editing data rather than requests to fulfill", async t => {
+    const draft = "generate a very simple python program to show how to send email";
+    const h = await harness(t, { saved: '{"enabled":true}' });
+    assert.equal((await h.input(draft)).action, "handled");
+    const [, context] = h.calls[0];
+    const request = context.messages[0].content[0].text;
+    assert.match(request, /Polish the wording/);
+    assert.match(request, /Do not answer/);
+    assert.ok(request.includes(JSON.stringify(draft)));
+    assert.match(context.systemPrompt, /Generate a very simple Python program that demonstrates how to send an email\./);
+    assert.match(context.systemPrompt, /Do not write the program/);
 });
 
 test("bypasses commands, attachments, busy/queued messages and noninteractive input", async t => {
