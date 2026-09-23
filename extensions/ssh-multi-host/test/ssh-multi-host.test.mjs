@@ -15,7 +15,7 @@ const jiti = createJiti(import.meta.url, { alias: {
     "@earendil-works/pi-tui": join(packageDir, "node_modules/@earendil-works/pi-tui/dist/index.js"),
     "typebox": join(packageDir, "node_modules/typebox/build/index.mjs"),
 } });
-const { default: install } = await jiti.import(resolve(import.meta.dirname, "../ssh-multi-host.ts"));
+const { default: install } = await jiti.import(resolve(import.meta.dirname, "../index.ts"));
 const initialExitCode = process.exitCode;
 const initialExitListeners = new Set(process.listeners("exit"));
 
@@ -117,7 +117,7 @@ test("remote read enforces absolute paths and includes provenance", async (t) =>
 });
 
 test("invalid or unreachable inventories fail closed without persistence", async (t) => {
-    for (const flag of [undefined, "app=", "a=x;;b=y", "-x=bad", "user@host=bad", "a=x;a=y"]) {
+    for (const flag of ["app=", "a=x;;b=y", "-x=bad", "user@host=bad", "a=x;a=y"]) {
         const h = await harness(t, { flag });
         assert.equal(h.shutdowns, 1);
         assert.deepEqual(h.active, []);
@@ -127,6 +127,14 @@ test("invalid or unreachable inventories fail closed without persistence", async
     assert.equal(h.shutdowns, 1);
     assert.match(h.notices.at(-1)[0], /db: unreachable/);
     assert.equal(h.entries.length, 0);
+});
+
+test("without a flag or saved inventory, leaves ordinary sessions alone", async (t) => {
+    const h = await harness(t);
+    assert.equal(h.shutdowns, 0);
+    assert.deepEqual(h.active, []);
+    assert.equal(h.entries.length, 0);
+    assert.equal(h.handlers.get("session_before_switch")({ reason: "new" }, h.ctx), undefined);
 });
 
 test("saved inventory wins, is revalidated, and new session is cancelled", async (t) => {

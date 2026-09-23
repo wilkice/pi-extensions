@@ -1,7 +1,7 @@
 /**
- * Explicitly loaded, TUI-only multi-host SSH diagnostic mode.
+ * Opt-in, TUI-only multi-host SSH diagnostic mode.
  *
- * pi -e ./standalone/ssh-multi-host.ts --ssh-hosts 'app=application;db=database'
+ * pi -e ./extensions/ssh-multi-host/index.ts --ssh-hosts 'app=application;db=database'
  * SSH aliases must already be configured and trusted by OpenSSH.
  */
 import { spawn } from "node:child_process";
@@ -142,10 +142,11 @@ export default function (pi: ExtensionAPI) {
 
     pi.on("session_start", async (event, ctx) => {
         ready = false;
-        pi.setActiveTools([]);
-        if (ctx.mode !== "tui") return fail(ctx, "TUI mode is required");
         const saved = ctx.sessionManager.getBranch().filter((entry) => entry.type === "custom" && entry.customType === STATE).at(-1);
         const flag = pi.getFlag("ssh-hosts") as string | undefined;
+        if (!saved && flag === undefined && (event.reason === "startup" || event.reason === "new")) return;
+        pi.setActiveTools([]);
+        if (ctx.mode !== "tui") return fail(ctx, "TUI mode is required");
         let next: Target[];
         try {
             if (saved) {
@@ -232,7 +233,7 @@ export default function (pi: ExtensionAPI) {
     });
 
     pi.on("session_before_switch", (event, ctx) => {
-        if (event.reason !== "new") return;
+        if (!ready || event.reason !== "new") return;
         ctx.ui.notify("Multi-host SSH: start a new Pi process with a new --ssh-hosts value.", "warning");
         return { cancel: true };
     });

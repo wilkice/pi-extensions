@@ -4,10 +4,10 @@ Custom extensions for Pi.
 
 ## Multi-host SSH diagnostics
 
-Start a TUI session with the standalone extension and OpenSSH config aliases:
+Start a TUI session with the multi-host SSH extension and OpenSSH config aliases:
 
 ```sh
-pi -e ./standalone/ssh-multi-host.ts --ssh-hosts 'app=application server;db=database server'
+pi -e ./extensions/ssh-multi-host/index.ts --ssh-hosts 'app=application server;db=database server'
 ```
 
 The extension checks every target before enabling local `read` and `bash` plus
@@ -19,7 +19,7 @@ and trusted host keys with OpenSSH before starting; SSH is non-interactive.
 Run its deterministic fake-SSH tests with:
 
 ```sh
-node --test standalone/test/ssh-multi-host.test.mjs
+node --test extensions/ssh-multi-host/test/ssh-multi-host.test.mjs
 ```
 
 SSH cancellation and timeout stop the local client; a remote process may still
