@@ -2,6 +2,29 @@
 
 Custom extensions for Pi.
 
+## Multi-host SSH diagnostics
+
+Start a TUI session with the standalone extension and OpenSSH config aliases:
+
+```sh
+pi -e ./standalone/ssh-multi-host.ts --ssh-hosts 'app=application server;db=database server'
+```
+
+The extension checks every target before enabling local `read` and `bash` plus
+`remote_read` and `remote_bash`. Remote calls name their target explicitly. It
+stores the verified inventory in the session, so resuming needs no flag. A
+saved inventory takes precedence if the flag is supplied again. Configure keys
+and trusted host keys with OpenSSH before starting; SSH is non-interactive.
+
+Run its deterministic fake-SSH tests with:
+
+```sh
+node --test standalone/test/ssh-multi-host.test.mjs
+```
+
+SSH cancellation and timeout stop the local client; a remote process may still
+be running.
+
 ## `openai-codex-web-search`
 
 Adds the `web_search` server tool to requests sent through the `openai-codex` provider, enabling supported models to search the web. Searches exclude results from `csdn.net`.
