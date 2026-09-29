@@ -247,15 +247,11 @@ export default function (pi: ExtensionAPI) {
         return { operations: createRemoteBashOps(ssh.remote, ssh.remoteCwd, localCwd) };
     });
 
-    // Replace local cwd with remote cwd in system prompt
+    // Replace local cwd with remote cwd in the structured system prompt (<cwd> section)
     pi.on("before_agent_start", async (event) => {
         const ssh = getSsh();
         if (ssh) {
-            const modified = event.systemPrompt.replace(
-                /^Current working directory:.*$/m,
-                `Current working directory: ${ssh.remoteCwd} (via SSH: ${ssh.remote})`,
-            );
-            return { systemPrompt: modified };
+            event.systemPromptOptions.cwd = ssh.remoteCwd;
         }
     });
 }
