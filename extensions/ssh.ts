@@ -20,8 +20,9 @@
  */
 
 import { spawn } from "node:child_process";
-import { homedir } from "node:os";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { realpathSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
     type BashOperations,
@@ -47,6 +48,32 @@ function isLocalResourcePath(filePath: string): boolean {
             (relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
         );
     });
+}
+
+// Pi saves pasted clipboard images to the local tmpdir and inserts that path into the prompt.
+// See docs/adr/0001-ssh-read-pasted-images-locally.md.
+const CLIPBOARD_IMAGE_NAME = /^pi-clipboard-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp|gif)$/i;
+const LOCAL_TMP_DIRS = (() => {
+    const dirs = new Set([resolve(tmpdir())]);
+    try {
+        // On macOS tmpdir() is under /var, a symlink to /private/var.
+        dirs.add(realpathSync(tmpdir()));
+    } catch {}
+    return [...dirs].map(normalizeForCompare);
+})();
+
+function normalizeForCompare(p: string): string {
+    return process.platform === "win32" ? p.toLowerCase() : p;
+}
+
+function isClipboardImagePath(filePath: string): boolean {
+    if (!isAbsolute(filePath)) return false;
+
+    const resolvedPath = resolve(filePath);
+    return (
+        CLIPBOARD_IMAGE_NAME.test(basename(resolvedPath)) &&
+        LOCAL_TMP_DIRS.includes(normalizeForCompare(dirname(resolvedPath)))
+    );
 }
 
 function sshExec(remote: string, command: string): Promise<Buffer> {
@@ -157,7 +184,7 @@ export default function (pi: ExtensionAPI) {
         promptGuidelines: ["Use read to examine files instead of cat or sed."],
         async execute(id, params, signal, onUpdate, _ctx) {
             const ssh = getSsh();
-            if (!ssh || isLocalResourcePath(params.path)) {
+            if (!ssh || isLocalResourcePath(params.path) || isClipboardImagePath(params.path)) {
                 return localRead.execute(id, params, signal, onUpdate);
             }
 
