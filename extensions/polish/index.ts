@@ -14,6 +14,7 @@ const GATE_PROVIDER = "typesafe";
 const GATE_MODEL = "jev-latest";
 const GATE_THRESHOLD = 0.5;
 const GATE_TIMEOUT_MS = 3_000;
+const POLISH_TIMEOUT_MS = 3_000;
 
 const SYSTEM_PROMPT = `You are a copy editor, not an assistant answering the draft.
 Your only task is to polish the wording of the supplied draft.
@@ -137,9 +138,11 @@ export default function (pi: ExtensionAPI) {
                 const loader = new BorderedLoader(tui, theme, "Checking whether the draft needs polishing…");
                 const controller = new AbortController();
                 let finished = false;
+                let polishTimeout: ReturnType<typeof setTimeout> | undefined;
                 const finish = (value: PolishResult) => {
                     if (finished) return;
                     finished = true;
+                    clearTimeout(polishTimeout);
                     controller.abort();
                     done(value);
                 };
@@ -186,6 +189,12 @@ export default function (pi: ExtensionAPI) {
                     if (needsPolish! < GATE_THRESHOLD) {
                         return finish({ kind: "bypass", note: `already clean (needs ${needsPolish!.toFixed(2)})` });
                     }
+                    if (finished) return;
+                    // Bound the UI wait even if the provider ignores cancellation.
+                    polishTimeout = setTimeout(() => finish({
+                        kind: "error",
+                        message: `DeepSeek request timed out after ${POLISH_TIMEOUT_MS}ms.`,
+                    }), POLISH_TIMEOUT_MS);
                     const response = await ctx.modelRegistry.complete(model, {
                         systemPrompt: SYSTEM_PROMPT,
                         messages: [{
@@ -204,6 +213,7 @@ ${JSON.stringify(original)}`,
                         signal,
                         samplingParams: { thinking: { type: "disabled" } },
                     });
+                    if (finished) return;
                     if (response.stopReason === "aborted") return finish({ kind: "cancelled" });
                     if (response.stopReason !== "stop") {
                         throw new Error(response.errorMessage || `Incomplete response (${response.stopReason}).`);

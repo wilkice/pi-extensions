@@ -54,9 +54,9 @@ For each eligible draft, the extension sends the complete draft to Jev through
   timeout, or malformed answer, the extension shows the Jev error detail in a
   warning and submits the original unchanged.
 
-A DeepSeek failure behaves differently: it restores the original without
-submitting it, so Enter can retry. Toggle `/polish` off to send without either
-check.
+DeepSeek has its own three-second deadline, starting after the Jev gate passes.
+A DeepSeek failure or timeout restores the original without submitting it, so
+Enter can retry. Toggle `/polish` off to send without either check.
 
 ## Scope, privacy, and cost
 

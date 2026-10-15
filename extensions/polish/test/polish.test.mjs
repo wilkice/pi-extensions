@@ -305,6 +305,31 @@ test("Escape cancels immediately; late completion cannot overwrite new typing", 
     assert.equal(h.editor, "new typing");
 });
 
+test("DeepSeek times out after three seconds, restores the draft, and ignores late results", { timeout: 5_000 }, async t => {
+    let resolve;
+    const h = await harness(t, { saved: '{"enabled":true}', complete: () => new Promise(r => { resolve = r; }) });
+    const pending = h.input();
+    await waitFor(() => h.calls.length === 1);
+    const started = Date.now();
+    const outcome = await Promise.race([
+        pending,
+        new Promise(resolve => {
+            const watchdog = setTimeout(() => resolve({ action: "hung" }), 4_000);
+            pending.finally(() => clearTimeout(watchdog));
+        }),
+    ]);
+    assert.equal(outcome.action, "handled");
+    assert.ok(Date.now() - started >= 2_900);
+    assert.equal(h.calls[0][2].signal.aborted, true);
+    assert.equal(h.editor, "pls fix bug");
+    assert.match(h.notices[0][0], /DeepSeek request timed out after 3000ms/);
+    assert.equal(h.notices[0][1], "error");
+    h.ctx.ui.setEditorText("new typing");
+    resolve({ stopReason: "stop", content: [{ type: "text", text: "late result" }] });
+    await new Promise(r => setImmediate(r));
+    assert.equal(h.editor, "new typing");
+});
+
 test("loader consumes typing instead of editing the draft", async t => {
     const h = await harness(t, { saved: '{"enabled":true}', complete: () => new Promise(() => {}) });
     const pending = h.input();
