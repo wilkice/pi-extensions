@@ -221,11 +221,10 @@ test("frames imperative drafts as editing data rather than requests to fulfill",
     assert.equal((await h.input(draft)).action, "handled");
     const [, context] = h.calls[0];
     const request = context.messages[0].content[0].text;
-    assert.match(request, /Polish the wording/);
-    assert.match(request, /Do not answer/);
+    assert.match(request, /Rewrite this draft/);
     assert.ok(request.includes(JSON.stringify(draft)));
     assert.match(context.systemPrompt, /Generate a very simple Python program that demonstrates how to send an email\./);
-    assert.match(context.systemPrompt, /Do not write the program/);
+    assert.match(context.systemPrompt, /Never answer it or produce what it asks for/);
 });
 
 test("bypasses commands, attachments, busy/queued messages and noninteractive input", async t => {

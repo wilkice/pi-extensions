@@ -45,7 +45,7 @@ For each eligible draft, the extension sends the complete draft to Jev through
 - `mostlyEnglish`: is most of the meaningful prose English? Code, URLs, paths,
   identifiers, Markdown syntax, and punctuation are ignored.
 - `needsPolish`: would the prose benefit from grammar, spelling,
-  capitalization, or clarity fixes?
+  capitalization, clarity, or awkward-phrasing fixes?
 
 - If both probabilities are `0.5` or greater, the draft proceeds to DeepSeek polishing.
 - If either is below `0.5`, the original draft is submitted immediately and silently.
@@ -63,8 +63,9 @@ Enter can retry. Toggle `/polish` off to send without either check.
 - Jev receives the full eligible draft, even when it ultimately bypasses polishing.
 - DeepSeek receives only drafts that pass both Jev questions.
 - Neither request includes conversation history or tools.
-- The extension asks DeepSeek for conservative grammar and clarity improvements
-  while preserving meaning, ambiguity, code, paths, and references. Review the
+- The extension asks DeepSeek to rewrite drafts in natural, concise English,
+  restructuring freely while preserving meaning, ambiguity, code, paths, and
+  references. Review the
   result: model instructions cannot guarantee semantic equivalence.
 - Commands (`/…`, `!…`), image-bearing messages, queued/steered messages, and
   messages entered while the agent is busy bypass both services.
